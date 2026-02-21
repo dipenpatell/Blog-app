@@ -1,0 +1,56 @@
+import React, { useState } from "react";
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate, useParams } from "react-router-dom";
+import { setBlogs } from "../../redux/User/actions";
+import axios from "axios";
+import BlogsFeed from "./blogs-feed";
+
+const BlogsPage = () => {
+  const { userId } = useParams();
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+
+  const { User } = useSelector((state) => state);
+
+  const [isFetching, setIsFetching] = useState(true);
+
+  const fetchingBlogs = async () => {
+    const token = localStorage.getItem("token");
+
+    try {
+      const blogs = await axios.get(
+        "http://localhost:8080/blogs/user/" + userId,
+        {
+          headers: {
+            Authorization: token,
+          },
+        }
+      );
+
+      if (blogs.data.success) {
+        dispatch(setBlogs(blogs.data.blogs));
+        setIsFetching(false);
+      } else {
+        console.error("Error fetching data:", blogs.data.message);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  useEffect(() => {
+    fetchingBlogs();
+  }, []);
+
+  return (
+    <div className="card-body">
+      <div className="text-xl font-extrabold">
+        {User.blogs.length > 0 && User.blogs[0].user.fullname}
+      </div>
+      <BlogsFeed isFetching={isFetching} blogs={User.blogs} />
+    </div>
+  );
+};
+
+export default BlogsPage;
